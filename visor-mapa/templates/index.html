@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor de Ubicaciones</title>
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #f5f5f5; 
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto;
+        }
+        
+        .header { 
+            background: white; 
+            padding: 20px 30px; 
+            border-radius: 8px; 
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        h1 { 
+            color: #1976D2; 
+            font-size: 26px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .upload-btn { 
+            background: #4CAF50; 
+            color: white; 
+            border: none; 
+            padding: 12px 24px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+        }
+        
+        .upload-btn:hover { 
+            background: #45a049;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.4);
+        }
+        
+        .info {
+            background: white;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #1976D2;
+            font-size: 14px;
+            color: #333;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .info strong {
+            color: #1565C0;
+        }
+        
+        .info-tip {
+            background: #FFF9C4;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #FBC02D;
+            font-size: 14px;
+            color: #333;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .info-tip strong {
+            color: #F57F17;
+        }
+        
+        #mapContainer { 
+            background: white; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: none;
+            width: 100%;
+            height: 650px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        #map { 
+            width: 100%; 
+            height: 100%;
+        }
+        
+        .error { 
+            background: #FFEBEE; 
+            color: #C62828; 
+            padding: 15px 20px; 
+            border-radius: 8px; 
+            margin-bottom: 15px;
+            display: none;
+            border-left: 4px solid #D32F2F;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .success {
+            background: #E8F5E9;
+            color: #2E7D32;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+            border-left: 4px solid #4CAF50;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        input[type="file"] { 
+            display: none; 
+        }
+        
+        .loading {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1976D2;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .empty-state {
+            background: white;
+            padding: 60px 40px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .empty-state h2 {
+            color: #666;
+            font-size: 20px;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+        
+        .empty-state p {
+            color: #999;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <span> </span>
+                Visor de Ubicaciones
+            </h1>
+            <div>
+                <input type="file" id="fileInput" accept=".xlsx,.xls">
+                <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                    <span>📁</span>
+                    Subir Excel
+                </button>
+            </div>
+        </div>
+        
+        <div class="info">
+            <strong> Formato requerido:</strong> Tu Excel debe tener 2 columnas → 
+            <strong>Columna 1:</strong> DESCRIPCION (nombre del lugar) | 
+            <strong>Columna 2:</strong> COORDENADAS (formato: -6.64, -79.39)
+        </div>
+        
+               
+        <div class="error" id="error"></div>
+        <div class="success" id="success"></div>
+        
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <p style="color: #666; font-size: 16px;">Procesando archivo y generando mapa...</p>
+        </div>
+        
+        <div id="mapContainer">
+            <div id="map"></div>
+        </div>
+        
+        <div class="empty-state" id="emptyState">
+            <div class="empty-state-icon">🌍</div>
+            <h2>Sube tu archivo Excel para comenzar</h2>
+
+    </div>
+
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function() {
+            const file = this.files[0];
+            if (!file) return;
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            // Ocultar todo
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('success').style.display = 'none';
+            document.getElementById('mapContainer').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                
+                if (data.error) {
+                    document.getElementById('error').innerHTML = '<strong>❌ Error:</strong> ' + data.error;
+                    document.getElementById('error').style.display = 'block';
+                    document.getElementById('emptyState').style.display = 'block';
+                } else {
+                    // Mostrar mensaje de éxito
+                    document.getElementById('success').innerHTML = 
+                        `<strong>✅ ¡Éxito!</strong> Se cargaron ${data.count} ubicaciones en el mapa. 
+                        Usa el selector en la esquina superior derecha para cambiar entre Vista Satélite y Mapa de Calles.`;
+                    document.getElementById('success').style.display = 'block';
+                    
+                    // Mostrar mapa
+                    const mapContainer = document.getElementById('mapContainer');
+                    const mapDiv = document.getElementById('map');
+                    
+                    mapContainer.style.display = 'block';
+                    mapDiv.innerHTML = data.map_html;
+                    
+                    console.log('✅ Mapa cargado con', data.count, 'ubicaciones');
+                    console.log('🛰️ Vista Satélite (Google Earth) activada por defecto');
+                    console.log('🗺️ Cambiar a Mapa de Calles usando el selector');
+                    
+                    // Scroll suave al mapa
+                    setTimeout(() => {
+                        mapContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 300);
+                }
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').innerHTML = '<strong>❌ Error de conexión:</strong> ' + error;
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('emptyState').style.display = 'block';
+                console.error('Error:', error);
+            });
+        });
+    </script>
+</body>
+</html>
